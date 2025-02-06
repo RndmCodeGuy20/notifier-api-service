@@ -38,6 +38,10 @@ app.get('/events', async (ctx) => {
         let isConnected = true;
 
         try {
+            ctx.header("Content-Type", "text/event-stream");
+            ctx.header("Cache-Control", "no-cache");
+            ctx.header("Connection", "keep-alive");
+
             // Add client to the map
             clients.set(clientId, { id: clientId, stream });
             log('info', `Client ${clientId} connected`);
@@ -50,6 +54,7 @@ app.get('/events', async (ctx) => {
             });
 
             // Keep connection alive with periodic heartbeat
+            // Inside your streamSSE /events route
             while (isConnected) {
                 try {
                     await stream.writeSSE({
@@ -57,12 +62,13 @@ app.get('/events', async (ctx) => {
                         event: 'heartbeat',
                         id: String(Date.now())
                     });
-                    await stream.sleep(30000); // Heartbeat every 30 seconds
+                    await stream.sleep(8000); // send heartbeat every 8 seconds (less than 10 seconds)
                 } catch (error) {
                     log('error', `Heartbeat failed for client ${clientId}:`, error);
                     isConnected = false;
                 }
             }
+
         } catch (error) {
             log('error', `SSE stream error for client ${clientId}:`, error);
         } finally {
@@ -81,7 +87,11 @@ app.post('/webhook', async (ctx) => {
         log('info', 'Webhook received:', payload);
 
         const { status, job_name, project } = payload;
-        const message = `Job: ${job_name}, Project: ${project}, Status: ${status}`;
+        const message = {
+            status,
+            job_name,
+            project,
+        };
         const disconnectedClients: number[] = [];
 
         // Send message to all connected clients
@@ -90,7 +100,6 @@ app.post('/webhook', async (ctx) => {
                 await client.stream.writeSSE({
                     data: JSON.stringify({ message }),
                     event: 'notification',
-                    id: String(Date.now()),
                 });
             } catch (error) {
                 log('error', `Failed to send message to client ${clientId}:`, error);

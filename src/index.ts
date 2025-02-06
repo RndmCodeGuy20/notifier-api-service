@@ -7,11 +7,12 @@ const init = async () => {
     Bun.serve({
         fetch: app.fetch,
         port: envConfig.PORT,
+        idleTimeout: 30,
     });
 
     loggerConfig.log(
         'verbose',
-        `Listening on ${envConfig.HOSTNAME} @ http://localhost:${envConfig.PORT}`,
+        `Listening on ${envConfig.HOSTNAME} @ http://${envConfig.HOST}:${envConfig.PORT}`,
     );
 
     // sendMail(); // Uncomment this line to send mail
