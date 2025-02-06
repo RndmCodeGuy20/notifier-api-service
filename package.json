@@ -1,0 +1,22 @@
+{
+  "name": "notifier-api-service",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "scripts": {
+    "dev": "bun --watch run src/index.ts NODE_ENV=development"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "hono": "^4.6.20",
+    "winston": "^3.17.0"
+  },
+  "imports": {
+    "#configs": "./src/configs/index.ts",
+    "#helpers": "./src/helpers/index.ts"
+  }
+}
