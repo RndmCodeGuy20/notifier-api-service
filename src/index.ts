@@ -1,8 +1,17 @@
-import app from './app.ts';
+import app, { clients } from './app.ts';
 import { envConfig } from '#configs';
 import { loggerConfig } from '#helpers';
+import redisHelper from './helpers/redis.helper.ts';
 
 const init = async () => {
+
+    await redisHelper.initRedisClient();
+
+    redisHelper.subscribe('ci_cd_alerts', (message) => {
+        clients.forEach(client => {
+            client.stream.writeSSE({ data: message, event: 'notification' });
+        });
+    });
 
     Bun.serve({
         fetch: app.fetch,

@@ -13,10 +13,14 @@
   },
   "dependencies": {
     "hono": "^4.6.20",
+    "http-status-codes": "^2.3.0",
+    "redis": "^4.7.0",
     "winston": "^3.17.0"
   },
   "imports": {
     "#configs": "./src/configs/index.ts",
-    "#helpers": "./src/helpers/index.ts"
+    "#helpers": "./src/helpers/index.ts",
+    "#types": "./src/types/index.ts",
+    "#constants": "./src/constants/index.ts"
   }
 }

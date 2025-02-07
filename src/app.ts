@@ -1,15 +1,8 @@
-import { log, loggerConfig, wLogger } from '#helpers';
+import { log, wLogger } from '#helpers';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { streamSSE } from 'hono/streaming';
-
-interface Client {
-    id: number;
-    stream: {
-        writeSSE: (data: SSEMessage) => void;
-        sleep: (ms: number) => Promise<void>;
-    };
-}
+import redisHelper from './helpers/redis.helper';
 
 interface WebhookPayload {
     status: string;
@@ -17,24 +10,26 @@ interface WebhookPayload {
     project: string;
 }
 
-interface SSEMessage {
-    data: string;
-    event?: string;
-    id?: string;
+interface Client {
+    stream: {
+        writeSSE: (data: { data: string, event?: string }) => void;
+    };
 }
 
 const app = new Hono();
-const clients = new Map<number, Client>();
+const clients = new Set<Client>();
 
 app.use(logger(wLogger));
 
-app.get('/', (ctx) => {
-    return ctx.json({ message: 'Hello World!' });
-});
+app.get('/events/:userId', async (ctx) => {
 
-app.get('/events', async (ctx) => {
+    const { userId } = ctx.req.param();
+
+    log('debug', `User ${userId} connected to SSE stream`);
+
     return streamSSE(ctx, async (stream) => {
         const clientId = Date.now();
+        const client: Client = { stream };
         let isConnected = true;
 
         try {
@@ -43,7 +38,7 @@ app.get('/events', async (ctx) => {
             ctx.header("Connection", "keep-alive");
 
             // Add client to the map
-            clients.set(clientId, { id: clientId, stream });
+            clients.add(client);
             log('info', `Client ${clientId} connected`);
 
             // Send initial connection message
@@ -53,8 +48,12 @@ app.get('/events', async (ctx) => {
                 id: String(clientId),
             });
 
-            // Keep connection alive with periodic heartbeat
-            // Inside your streamSSE /events route
+            stream.onAbort(() => {
+                isConnected = false;
+                clients.delete(client);
+                log('info', `Client ${clientId} disconnected`);
+            });
+
             while (isConnected) {
                 try {
                     await stream.writeSSE({
@@ -71,61 +70,27 @@ app.get('/events', async (ctx) => {
 
         } catch (error) {
             log('error', `SSE stream error for client ${clientId}:`, error);
-        } finally {
-            // Clean up when the connection ends
-            if (clients.has(clientId)) {
-                clients.delete(clientId);
-                log('info', `Client ${clientId} disconnected`);
-            }
         }
     });
 });
 
+// Webhook Route with Rate Limiting
 app.post('/webhook', async (ctx) => {
     try {
         const payload = await ctx.req.json<WebhookPayload>();
-        log('info', 'Webhook received:', payload);
+        const message = JSON.stringify(payload);
 
-        const { status, job_name, project } = payload;
-        const message = {
-            status,
-            job_name,
-            project,
-        };
-        const disconnectedClients: number[] = [];
+        await redisHelper.publish('ci_cd_alerts', message);
 
-        // Send message to all connected clients
-        for (const [clientId, client] of clients.entries()) {
-            try {
-                await client.stream.writeSSE({
-                    data: JSON.stringify({ message }),
-                    event: 'notification',
-                });
-            } catch (error) {
-                log('error', `Failed to send message to client ${clientId}:`, error);
-                disconnectedClients.push(clientId);
-            }
-        }
-
-        // Clean up disconnected clients
-        disconnectedClients.forEach(clientId => {
-            clients.delete(clientId);
-        });
-
-        return ctx.json({
-            message: 'Webhook received',
-            clientCount: clients.size
-        });
+        return ctx.json({ message: 'Webhook received', clientCount: clients.size });
     } catch (error) {
         log('error', 'Webhook error:', error);
-        return ctx.json({
-            error: 'Invalid webhook payload'
-        }, 400);
+        return ctx.json({ error: 'Invalid payload' }, 400);
     }
 });
 
-app.notFound((ctx) => {
-    return ctx.json({ message: 'Not Found' }, { status: 404 });
-});
-
 export default app;
+
+export {
+    clients
+}
