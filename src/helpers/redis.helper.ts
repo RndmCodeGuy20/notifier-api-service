@@ -5,7 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import type { IErrorInfo } from '#types';
 import { ERROR_CODES } from '#constants';
 
-const redisUrl = `redis://${envConfig.REDIS.HOST}:${envConfig.REDIS.PORT}`;
+// const redisUrl = `redis://${envConfig.REDIS.HOST}:${envConfig.REDIS.PORT}`;
+const vercelRedisUrl = envConfig.REDIS.VERCEL_URL;
 let client: RedisClientType;
 let subscriber: RedisClientType; // Separate client for subscriptions
 
@@ -33,8 +34,8 @@ export const redisHelper = {
     initRedisClient: async () => {
         try {
             log('verbose', `Initializing Redis client`);
-            client = createClient({ url: redisUrl });
-            subscriber = createClient({ url: redisUrl }); // Separate client for subscriptions
+            client = createClient({ url: vercelRedisUrl });
+            subscriber = createClient({ url: vercelRedisUrl }); // Separate client for subscriptions
 
             client.on('connect', () => {
                 log('verbose', 'Redis connection established');
