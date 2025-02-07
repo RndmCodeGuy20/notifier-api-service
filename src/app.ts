@@ -21,6 +21,10 @@ const clients = new Set<Client>();
 
 app.use(logger(wLogger));
 
+app.get('/', async (ctx) => {
+    return ctx.json({ message: 'Hello, World!' });
+});
+
 app.get('/events/:userId', async (ctx) => {
 
     const { userId } = ctx.req.param();
