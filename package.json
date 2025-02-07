@@ -6,7 +6,8 @@
     "@types/bun": "latest"
   },
   "scripts": {
-    "dev": "bun --watch run src/index.ts NODE_ENV=development"
+    "dev": "bun --watch run src/index.ts NODE_ENV=development",
+     "vercel-build": "bun build ./src/index.ts --outdir ./dist --target bun"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
