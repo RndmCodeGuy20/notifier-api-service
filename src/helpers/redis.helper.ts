@@ -27,7 +27,7 @@ class RedisService {
     private client: RedisClientType | null = null;
     private subscriber: RedisClientType | null = null;
     private redisStatus: 'inactive' | 'active' = 'inactive';
-    private vercelRedisUrl: string; // Store the URL
+    private readonly vercelRedisUrl: string; // Store the URL
 
     constructor(vercelRedisUrl: string) {
         this.vercelRedisUrl = vercelRedisUrl;
