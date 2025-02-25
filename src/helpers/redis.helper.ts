@@ -9,7 +9,7 @@ const vercelRedisUrl = envConfig.REDIS.VERCEL_URL;
 let client: RedisClientType;
 let subscriber: RedisClientType; // Separate client for subscriptions
 
-export var redis_status = 'inactive';
+export let redis_status = 'inactive';
 
 class RedisServiceError extends Error {
     private readonly info: IErrorInfo;
