@@ -2,7 +2,7 @@ import { log, wLogger } from '#helpers';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { streamSSE } from 'hono/streaming';
-import redisHelper from './helpers/redis.helper';
+import redisService from './helpers/redis.helper';
 
 interface WebhookPayload {
     status: string;
@@ -84,7 +84,7 @@ app.post('/webhook', async (ctx) => {
         const payload = await ctx.req.json<WebhookPayload>();
         const message = JSON.stringify(payload);
 
-        await redisHelper.publish('ci_cd_alerts', message);
+        await redisService.publish('ci_cd_alerts', message);
 
         return ctx.json({ message: 'Webhook received', clientCount: clients.size });
     } catch (error) {
