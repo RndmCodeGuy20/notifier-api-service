@@ -5,17 +5,16 @@ import { StatusCodes } from 'http-status-codes';
 import type { IErrorInfo } from '#types';
 import { ERROR_CODES } from '#constants';
 
-// const redisUrl = `redis://${envConfig.REDIS.HOST}:${envConfig.REDIS.PORT}`;
 const vercelRedisUrl = envConfig.REDIS.VERCEL_URL;
 let client: RedisClientType;
 let subscriber: RedisClientType; // Separate client for subscriptions
 
-export let redis_status = 'inactive';
+export var redis_status = 'inactive';
 
 class RedisServiceError extends Error {
-    private info: IErrorInfo;
-    private status: number;
-    private errorCode: string;
+    private readonly info: IErrorInfo;
+    private readonly status: number;
+    private readonly errorCode: string;
     constructor(
         message: string,
         info: IErrorInfo,
@@ -84,7 +83,7 @@ export const redisHelper = {
             if (typeof value === 'object') {
                 await client.SET(key, JSON.stringify(value));
             } else {
-                await client.SET(key, value?.toString() || '');
+                await client.SET(key, value?.toString() ?? '');
             }
             return true;
         } catch (e) {

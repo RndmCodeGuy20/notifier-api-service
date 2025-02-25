@@ -65,14 +65,14 @@ const developmentFormat = winston.format.combine(
                 ...metadata,
             };
 
-            if (stack) {
-                // eslint-disable-next-line max-len
-                return `${msg.timestamp} [${msg.level}] ${msg.label ? `(${msg.label})` : ''}: ${msg.message}\n${msg.stack}`;
-            }
-
+            const messageLabel = msg.label ? `(${msg.label})` : '';
             const metaData = excludeKeys(metadata, ['service', 'req', 'res']);
 
-            return `${msg.timestamp} [${msg.level}] ${msg.label ? `(${msg.label})` : ''}: ${msg.message} ${isEmptyObject(metaData) ? '' : '\n' + JSON.stringify(metaData, null, 2)}`;
+            if (stack) {
+                return `${msg.timestamp} [${msg.level}] ${messageLabel.toLowerCase()}: ${msg.message}\n${msg.stack}`;
+            }
+
+            return `${msg.timestamp} [${msg.level}] ${messageLabel}: ${msg.message} ${isEmptyObject(metaData) ? '' : '\n' + JSON.stringify(metaData, null, 2)}`;
         },
     ),
     // winston.format.align(),
